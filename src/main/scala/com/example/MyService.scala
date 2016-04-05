@@ -15,7 +15,6 @@ class MyServiceActor extends Actor with MyService {
   def receive         = runRoute( myRoute )
 }
 
-// this trait defines our service behavior independently from the service actor
 trait MyService extends HttpService {
 
   val myRoute =
@@ -23,19 +22,33 @@ trait MyService extends HttpService {
 
       parameters( 'publicId.as[ String ],
                   'partnerId.as[ String ],
-                  'agent.as[ String ] ) {
-        ( publicId, partnerId, agent ) =>
+                  'analyticsId.as[ String ],
+                  'playerId.as[ String ],
+                  'isLive.as[ Boolean ],
+                  'agent.as[ String ],
+                  'channelId.as[ String ].?
+                  ) {
+
+        ( publicId, partnerId, analyticsId, playerId, isLive, agent, channelId ) =>
 
           complete {
 
-            val userAgentValidation = checkUserAGent( agent )
-            val publicIdValidation  = checkIfEmpty( "publicId", publicId )
-            val partnerIdValidation = checkIfEmpty( "partnerId", partnerId )
+            val userAgentValidation   = checkUserAGent( agent )
+            val publicIdValidation    = checkIfEmpty( "publicId", publicId )
+            val partnerIdValidation   = checkIfEmpty( "partnerId", partnerId )
+            val analyticsIdValidation = checkIfEmpty( "analyticsId", analyticsId )
+            val playerIdValidation    = checkIfEmpty( "playerId", playerId )
+            val isLiveValidation      = checkIfLive( isLive, channelId );
 
-            new ApiPlayerResponse( userAgentValidation, publicIdValidation, partnerIdValidation )
+            new ApiPlayerResponse(publicIdValidation,
+                                  partnerIdValidation,
+                                  analyticsIdValidation,
+                                  playerIdValidation,
+                                  isLiveValidation,
+                                  userAgentValidation)
           }
+        }
       }
-    }
 
   def checkIfEmpty( fieldName: String, fieldValue: String ): String = {
 
@@ -57,6 +70,26 @@ trait MyService extends HttpService {
 
     userAgent
   }
+
+  def checkIfLive( isLive:Boolean, channelId:Option[String] ): String  = {
+
+    if(isLive){
+      val hasChannelId = channelId match {
+        case Some(channelId) => true
+        case None => false
+      }
+
+      if(hasChannelId && channelId.get.length > 0)
+        "The fields isLive and channelId have consistent values."
+      else
+        "The parameter channelId is either missing or has an empty value."
+    }
+    else
+      "The field isLive has an acceptable value."
+
+  }
+
+
 
 }
 
