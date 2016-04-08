@@ -1,7 +1,8 @@
 ## Streamhub stats validation tool
 
 This project allows you to test your implementations of the Streamhub REST API
-https://streamhub5.wordpress.com/docs-3/ > 'Integrating the StreamhubAnalytics REST API'
+[https://streamhub5.wordpress.com/docs-3/] (https://streamhub5.wordpress.com/docs-3/)
+> Integrating the StreamhubAnalytics REST API
 
 
 Follow these steps to get started:
@@ -22,7 +23,8 @@ Follow these steps to get started:
 
         > re-start
 
-6. Browse to [http://localhost:8080](http://localhost:8080/)
+6. Submit your queries [http://localhost:8080/api/player](http://localhost:8080/api/player) or
+[http://localhost:8080/api/playerevent](http://localhost:8080/api/playerevent)
 
 7. Stop the application:
 
