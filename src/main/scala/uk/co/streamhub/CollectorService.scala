@@ -19,9 +19,19 @@ class CollectorServiceActor extends Actor with CollectorService {
 
 trait CollectorService extends HttpService {
 
-  val tickStartTimes          = List(5 / 60, 10 / 60, 15 / 60, 20 / 60, 25 / 60, 30 / 60, 35 / 60, 40 / 60, 45 / 60, 50 / 60, 55 / 60);
+  val tickStartTimes: List[Double] = List(0.08333333333,
+                                          0.1666666667,
+                                          0.25,
+                                          0.3333333333,
+                                          0.4166666667,
+                                          0.5,
+                                          0.5833333333,
+                                          0.6666666667,
+                                          0.75,
+                                          0.8333333333,
+                                          0.9166666667)
 
-  val eventNamesAndParameters = List("player_error", "player_start", "player_play_completed", "completion",
+  val eventNamesAndParameters       = List("player_error", "player_start", "player_play_completed", "completion",
     "click", "player_play_seek", "click_pause", "click_pause_off", "click_player_fullscreen", "completionRate")
 
   val completionRates: List[Double] = List( 0.01, 0.25, 0.50, 0.75, 0.95 )
@@ -34,7 +44,7 @@ trait CollectorService extends HttpService {
         'analyticsId.as[String],
         'playerId.as[String],
         'isLive.as[Boolean],
-        'startTime.as[Float],
+        'startTime.as[Double],
         'agent.as[String],
         'parentPublicId.as[String].?
       ) {
@@ -59,7 +69,7 @@ trait CollectorService extends HttpService {
           'analyticsId.as[String],
           'playerId.as[String],
           'isLive.as[Boolean],
-          'startTime.as[Float],
+          'startTime.as[Double],
           'agent.as[String],
           'parentPublicId.as[String].?,
           'event.as[String],
@@ -105,7 +115,7 @@ trait CollectorService extends HttpService {
                      playerId: String,
                      isLive: Boolean,
                      parentPublicId: Option[String],
-                     startTime: Float): (String, String, String, String, String, String, UA) = {
+                     startTime: Double): (String, String, String, String, String, String, UA) = {
 
     val publicIdValidation = checkIfEmpty("publicId", publicId)
     val partnerIdValidation = checkIfEmpty("partnerId", partnerId)
@@ -158,10 +168,10 @@ trait CollectorService extends HttpService {
 
   }
 
-  def checkStartTime(startTime: Float): String = {
+  def checkStartTime(startTime: Double): String = {
 
     val checkResponse: String = if (tickStartTimes.contains(startTime) ||
-      startTime % 1 != 0)
+      startTime % 1 == 0)
       startTime + " is an acceptable value"
     else
       startTime + " is not acceptable. Ticks must be sent every 5 seconds during the first " +
