@@ -1,4 +1,4 @@
-package com.example
+package uk.co.streamhub
 
 import org.slf4j.LoggerFactory
 

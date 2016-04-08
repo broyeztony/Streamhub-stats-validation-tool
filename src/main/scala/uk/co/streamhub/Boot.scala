@@ -1,4 +1,4 @@
-package com.example
+package uk.co.streamhub
 
 import akka.actor.{ActorSystem, Props}
 import akka.event.LoggingAdapter
@@ -14,7 +14,7 @@ object Boot extends App {
   implicit val system = ActorSystem("on-spray-can")
 
   // create and start our service actor
-  val service = system.actorOf(Props[MyServiceActor], "demo-service")
+  val service = system.actorOf(Props[CollectorServiceActor], "demo-service")
 
   implicit val timeout = Timeout(5.seconds)
 
