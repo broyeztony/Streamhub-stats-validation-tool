@@ -15,6 +15,7 @@ libraryDependencies ++= {
     "io.spray"                %% "spray-json"     % "1.3.2",
     "org.json4s"              %% "json4s-native"  % "3.2.10",
     "org.json4s"              %% "json4s-ext"     % "3.2.10",
+    "com.typesafe.akka"       % "akka-slf4j_2.11" % "2.3.9",
     "io.spray"                %%  "spray-testkit" % sprayV    % "test",
     "com.typesafe.akka"       %%  "akka-actor"    % akkaV,
     "com.typesafe.akka"       %%  "akka-testkit"  % akkaV     % "test",

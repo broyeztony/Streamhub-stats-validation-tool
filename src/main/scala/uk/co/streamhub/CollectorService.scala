@@ -24,7 +24,7 @@ trait CollectorService extends HttpService {
   val eventNamesAndParameters = List("player_error", "player_start", "player_play_completed", "completion",
     "click", "player_play_seek", "click_pause", "click_pause_off", "click_player_fullscreen", "completionRate")
 
-  val completionRates         = List( 0.01, 0.25, 0.50, 0.75, 0.95 )
+  val completionRates: List[Double] = List( 0.01, 0.25, 0.50, 0.75, 0.95 )
 
   val myRoute =
     path("api" / "player") {
@@ -63,7 +63,7 @@ trait CollectorService extends HttpService {
           'agent.as[String],
           'parentPublicId.as[String].?,
           'event.as[String],
-          'completionRate.as[Float].?
+          'completionRate.as[Double].?
         ) {
 
           (publicId, partnerId, analyticsId,
@@ -77,10 +77,17 @@ trait CollectorService extends HttpService {
               val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) ) eventName + " is a valid event name"
               else eventName + " is not a valid event name"
 
-              val completionRateValidation = if( completionRates.contains( completionRate ) )
-                completionRate + " is a valid completion rate value"
-              else
-                "Completion rate is either missing or invalid. Ignore this warning if you did not send a completion event."
+              var completionRateValidation = "N/A"
+
+              if( eventName == "completion" ){
+
+                val rate = completionRate.get
+                completionRateValidation = if( completionRates.contains( rate ) )
+                  rate + " is a valid completion rate value"
+                else
+                  "Completion rate is either missing or invalid. Found " + rate +
+                    ", expected: one of " + completionRates.toString
+              }
 
 
               new ApiPlayerEventResponse(checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
