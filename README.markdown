@@ -1,7 +1,7 @@
 ## Streamhub stats validation tool
 
 This project allows you to test your implementations of the Streamhub REST API
-https://streamhub5.wordpress.com/docs-3/
+https://streamhub5.wordpress.com/docs-3/ > 'Integrating the StreamhubAnalytics REST API'
 
 
 Follow these steps to get started:
@@ -17,7 +17,6 @@ Follow these steps to get started:
 3. Launch SBT:
 
         $ sbt
-
 
 4. Start the application:
 
