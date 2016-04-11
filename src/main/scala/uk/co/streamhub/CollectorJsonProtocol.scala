@@ -11,7 +11,9 @@ case class ApiPlayerResponse( publicId: String,
                               playerId: String,
                               isLive: String,
                               startTime: String,
-                              userAgent: UA )
+                              userAgent: UA,
+                              sessionId: String,
+                              randomSessionKey: String)
 
 case class ApiPlayerEventResponse(publicId: String,
                                   partnerId: String,
@@ -20,6 +22,8 @@ case class ApiPlayerEventResponse(publicId: String,
                                   isLive: String,
                                   startTime: String,
                                   userAgent: UA,
+                                  sessionId: String,
+                                  randomSesssionKey: String,
                                   event: String,
                                   completionRate: String)
 
@@ -27,8 +31,8 @@ case class ApiPlayerEventResponse(publicId: String,
 object CollectorJsonProtocol extends DefaultJsonProtocol {
 
   implicit val uaFormat                     = jsonFormat4( UA )
-  implicit val apiPlayerResponseFormat      = jsonFormat7( ApiPlayerResponse )
-  implicit val apiPlayerEventResponseFormat = jsonFormat9( ApiPlayerEventResponse )
+  implicit val apiPlayerResponseFormat      = jsonFormat9( ApiPlayerResponse )
+  implicit val apiPlayerEventResponseFormat = jsonFormat11( ApiPlayerEventResponse )
 
 }
 

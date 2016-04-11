@@ -46,19 +46,22 @@ trait CollectorService extends HttpService {
         'isLive.as[Boolean],
         'startTime.as[Double],
         'agent.as[String],
-        'parentPublicId.as[String].?
+        'parentPublicId.as[String].?,
+        'sessionId.as[String],
+        'randomSessionKey.as[String]
       ) {
 
-        (publicId, partnerId, analyticsId, playerId, isLive, startTime, agent, parentPublicId) =>
+        (publicId, partnerId, analyticsId, playerId, isLive, startTime,
+         agent, parentPublicId, sessionId, randomSessionKey) =>
 
           complete {
 
             val checkedUrlParams = checkUrlParams(agent, publicId, partnerId,
-              analyticsId, playerId, isLive, parentPublicId, startTime)
+              analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
 
             new ApiPlayerResponse(checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
-              checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6,
-              checkedUrlParams._7)
+              checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
+              checkedUrlParams._8, checkedUrlParams._9)
           }
       }
     } ~
@@ -73,36 +76,48 @@ trait CollectorService extends HttpService {
           'agent.as[String],
           'parentPublicId.as[String].?,
           'event.as[String],
-          'completionRate.as[Double].?
+          'completionRate.as[Double].?,
+          'sessionId.as[String],
+          'randomSessionKey.as[String]
         ) {
 
-          (publicId, partnerId, analyticsId,
-           playerId, isLive, startTime, agent, parentPublicId, eventName, completionRate) =>
+          (publicId, partnerId, analyticsId, playerId, isLive, startTime, agent,
+           parentPublicId, eventName, completionRate, sessionId, randomSessionKey) =>
 
             complete {
 
               val checkedUrlParams = checkUrlParams(agent, publicId, partnerId,
-                analyticsId, playerId, isLive, parentPublicId, startTime)
+                analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
 
-              val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) ) eventName + " is a valid event name"
-              else eventName + " is not a valid event name"
+              val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) )
+                eventName + " is a valid event name"
+              else
+                eventName + " is not a valid event name"
 
               var completionRateValidation = "N/A"
 
               if( eventName == "completion" ){
 
-                val rate = completionRate.get
-                completionRateValidation = if( completionRates.contains( rate ) )
-                  rate + " is a valid completion rate value"
-                else
-                  "Completion rate is either missing or invalid. Found " + rate +
-                    ", expected: one of " + completionRates.toString
-              }
+                completionRate match {
+                  case Some(completionRate) => {
 
+                    completionRateValidation = if( completionRates.contains( completionRate ) )
+                      completionRate + " is a valid completion rate value"
+                    else
+                      "Completion rate is either missing or invalid. Found " + completionRate +
+                        ", expected: one of " + completionRates.toString
+                  }
+                  case None => {
+                    completionRateValidation = "a completionRate value needs to be provided " +
+                      "along with a completion event."
+                  }
+                }
+
+              }
 
               new ApiPlayerEventResponse(checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
                 checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
-                eventNameValidation, completionRateValidation )
+                checkedUrlParams._8, checkedUrlParams._9, eventNameValidation, completionRateValidation )
 
             }
         }
@@ -115,18 +130,22 @@ trait CollectorService extends HttpService {
                      playerId: String,
                      isLive: Boolean,
                      parentPublicId: Option[String],
-                     startTime: Double): (String, String, String, String, String, String, UA) = {
+                     startTime: Double,
+                     sessionId: String,
+                     randomSessionKey: String): (String, String, String, String, String, String, UA, String, String) = {
 
-    val publicIdValidation = checkIfEmpty("publicId", publicId)
-    val partnerIdValidation = checkIfEmpty("partnerId", partnerId)
-    val analyticsIdValidation = checkIfEmpty("analyticsId", analyticsId)
-    val playerIdValidation = checkIfEmpty("playerId", playerId)
-    val isLiveValidation = checkIfLive(isLive, parentPublicId)
-    val startTimeValidation = checkStartTime(startTime)
-    val userAgentValidation = checkUserAGent(agent)
+    val publicIdValidation            = checkIfEmpty("publicId", publicId)
+    val partnerIdValidation           = checkIfEmpty("partnerId", partnerId)
+    val analyticsIdValidation         = checkIfEmpty("analyticsId", analyticsId)
+    val playerIdValidation            = checkIfEmpty("playerId", playerId)
+    val isLiveValidation              = checkIfLive(isLive, parentPublicId)
+    val startTimeValidation           = checkStartTime(startTime)
+    val userAgentValidation           = checkUserAGent(agent)
+    val sessionIdValidation           = checkIfEmpty("sessionId", sessionId)
+    val randomSessionKeyValidation    = checkIfEmpty("randomSessionKey", randomSessionKey)
 
     (publicIdValidation, partnerIdValidation, analyticsIdValidation, playerIdValidation,
-      isLiveValidation, startTimeValidation, userAgentValidation)
+      isLiveValidation, startTimeValidation, userAgentValidation, sessionIdValidation, randomSessionKeyValidation)
   }
 
   def checkIfEmpty(fieldName: String, fieldValue: String): String = {
@@ -165,16 +184,15 @@ trait CollectorService extends HttpService {
     }
     else
       "The field isLive has an acceptable value."
-
   }
 
   def checkStartTime(startTime: Double): String = {
 
     val checkResponse: String = if (tickStartTimes.contains(startTime) ||
       startTime % 1 == 0)
-      startTime + " is an acceptable value"
+      startTime + " is a valid value."
     else
-      startTime + " is not acceptable. Ticks must be sent every 5 seconds during the first " +
+      startTime + " is not an acceptable value. Ticks must be sent every 5 seconds during the first " +
         "minute of video, then every minute after the first minute. The startTime value has " +
         "to be provided minutely."
 
