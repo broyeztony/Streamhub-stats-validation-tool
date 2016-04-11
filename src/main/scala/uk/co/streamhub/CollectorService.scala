@@ -34,7 +34,7 @@ trait CollectorService extends HttpService {
   val eventNamesAndParameters       = List("player_error", "player_start", "player_play_completed", "completion",
     "click", "player_play_seek", "click_pause", "click_pause_off", "click_player_fullscreen", "completionRate")
 
-  val completionRates: List[Double] = List( 0.01, 0.25, 0.50, 0.75, 0.95 )
+  val completionRates: List[Int]    = List( 1, 25, 50, 75, 95 )
 
   val myRoute =
     path("api" / "player") {
@@ -76,7 +76,7 @@ trait CollectorService extends HttpService {
           'agent.as[String],
           'parentPublicId.as[String].?,
           'event.as[String],
-          'completionRate.as[Double].?,
+          'completionRate.as[Int].?,
           'sessionId.as[String],
           'randomSessionKey.as[String]
         ) {
