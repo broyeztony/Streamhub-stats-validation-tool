@@ -158,7 +158,7 @@ trait CollectorService extends HttpService {
         "The parameter parentPublicId is either missing or has an empty value."
     }
     else
-      "The field isLive has an acceptable value."
+     isLive +  "is a valid value for the field."
   }
 
   def checkStartTime(startTime: Double): String = {
