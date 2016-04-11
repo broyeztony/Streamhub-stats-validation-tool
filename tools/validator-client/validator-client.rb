@@ -28,10 +28,10 @@ end
 
 infile = ARGV.first
 
-url = "http://localhost:8080"
+Url = "http://localhost:8080"
 
 begin
-  conn = Faraday.new(:url => url) do |b|
+  conn = Faraday.new(:url => Url) do |b|
     b.request  :url_encoded
     # b.response :logger
     # b.response :json, :content_type => /\bjson$/
@@ -39,7 +39,7 @@ begin
     b.adapter Faraday.default_adapter
   end
 rescue Faraday::ConnectionFailed => e
-  puts "Failed to connect: #{url}"
+  puts "Failed to connect: #{Url}"
   exit 1
 end
 
@@ -50,7 +50,7 @@ end
 
 @table = CSV.table(open(infile), headers: :first_row, converters: :integer, col_sep: "\t", skip_blanks: true, skip_lines: /^#/)
 
-results = []
+out = []
 
 @table.each_with_index do |row, index|
   expected = ""
@@ -63,6 +63,7 @@ results = []
 
       @headers.each do |k,v|
         next unless row[k]
+        # column name starts with underscore will be ignored
         next if v =~ /\A_/
 
         req.params[v] = row[k]
@@ -70,7 +71,7 @@ results = []
       params = req.params
     end
   rescue Faraday::ConnectionFailed
-    results << { "error" => "Failed to connect to #{url}" }
+    out << { "error" => "Failed to connect to #{url}" }
     break
   end
 
@@ -81,11 +82,11 @@ results = []
     j["_expected"] = expected
     # this is not supported yet
     # j["result"] = expected == j["actual"]
-    results << j
+    out << j
   else
     # Internal Server Error or something similar
-    results << { "error" => res.body, "id" => index, "params" => params, "_expected" => expected }
+    out << { "error" => res.body, "id" => index, "params" => params, "_expected" => expected }
   end
 end
 
-puts JSON.dump(results)
+puts JSON.dump(out)
