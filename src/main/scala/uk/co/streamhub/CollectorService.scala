@@ -7,9 +7,6 @@ import spray.httpx.SprayJsonSupport._
 import spray.routing._
 import CollectorJsonProtocol._
 
-
-// we don't implement our route structure directly in the service actor because
-// we want to be able to test it independently, without having to spin up an actor
 class CollectorServiceActor extends Actor with CollectorService {
 
   def actorRefFactory = context
@@ -39,7 +36,8 @@ trait CollectorService extends HttpService {
   val myRoute =
     path("api" / "player") {
 
-      parameters('publicId.as[String],
+      parameters(
+        'publicId.as[String],
         'partnerId.as[String],
         'analyticsId.as[String],
         'playerId.as[String],
@@ -67,7 +65,8 @@ trait CollectorService extends HttpService {
     } ~
       path("api" / "playerevent") {
 
-        parameters('publicId.as[String],
+        parameters(
+          'publicId.as[String],
           'partnerId.as[String],
           'analyticsId.as[String],
           'playerId.as[String],
@@ -86,34 +85,10 @@ trait CollectorService extends HttpService {
 
             complete {
 
-              val checkedUrlParams = checkUrlParams(agent, publicId, partnerId,
-                analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
+              val checkedUrlParams          = checkUrlParams(agent, publicId, partnerId, analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
+              val eventNameValidation       = checkEventName(eventName)
+              val completionRateValidation  = checkCompletionRate(eventName, completionRate)
 
-              val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) )
-                eventName + " is a valid event name"
-              else
-                eventName + " is not a valid event name"
-
-              var completionRateValidation = "N/A"
-
-              if( eventName == "completion" ){
-
-                completionRate match {
-                  case Some(completionRate) => {
-
-                    completionRateValidation = if( completionRates.contains( completionRate ) )
-                      completionRate + " is a valid completion rate value"
-                    else
-                      "Completion rate is either missing or invalid. Found " + completionRate +
-                        ", expected: one of " + completionRates.toString
-                  }
-                  case None => {
-                    completionRateValidation = "a completionRate value needs to be provided " +
-                      "along with a completion event."
-                  }
-                }
-
-              }
 
               new ApiPlayerEventResponse(checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
                 checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
@@ -197,6 +172,41 @@ trait CollectorService extends HttpService {
         "to be provided minutely."
 
     checkResponse
+  }
+
+  def checkEventName(eventName: String): String = {
+
+    val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) )
+      eventName + " is a valid event name"
+    else
+      eventName + " is not a valid event name"
+
+    eventNameValidation
+  }
+
+  def checkCompletionRate(eventName: String, completionRate: Option[Int]): String = {
+
+    var completionRateValidation = "N/A"
+
+    if( eventName == "completion" ){
+
+      completionRate match {
+        case Some(completionRate) => {
+
+          completionRateValidation = if( completionRates.contains( completionRate ) )
+            completionRate + " is a valid completion rate value"
+          else
+            "Completion rate is either missing or invalid. Found " + completionRate +
+              ", expected: one of " + completionRates.toString
+        }
+        case None => {
+          completionRateValidation = "a completionRate value needs to be provided " +
+            "along with a completion event."
+        }
+      }
+    }
+
+    completionRateValidation
   }
 
 
