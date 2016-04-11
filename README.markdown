@@ -1,7 +1,7 @@
 ## Streamhub stats validation tool
 
 The goal of this project is to provide validation tool for your implementation of the Streamhub REST api
-It is a complementary tool to the documentation we provide at [https://streamhub5.wordpress.com/docs-3/] (https://streamhub5.wordpress.com/docs-3/) 
+It is a complementary tool to the documentation we provide at https://streamhub5.wordpress.com/docs-3/. 
 
 Factually, it is a Scala/Spray server that you can target in place of the production collector server (stats.streamhub.io) in 
 your api implementation project, and submit requests to.
