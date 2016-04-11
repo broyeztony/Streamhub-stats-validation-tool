@@ -6,6 +6,8 @@ import net.sf.uadetector.service.UADetectorServiceFactory
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 import CollectorJsonProtocol._
+import scala.util.control.Breaks._
+
 
 class CollectorServiceActor extends Actor with CollectorService {
 
@@ -16,23 +18,22 @@ class CollectorServiceActor extends Actor with CollectorService {
 
 trait CollectorService extends HttpService {
 
-  var requestIsValid:Boolean         = true
-  val tickStartTimes: List[Double] = List(0.08333333333,
-                                          0.1666666667,
-                                          0.25,
-                                          0.3333333333,
-                                          0.4166666667,
-                                          0.5,
-                                          0.5833333333,
-                                          0.6666666667,
-                                          0.75,
-                                          0.8333333333,
-                                          0.9166666667)
+  var requestIsValid:Boolean                  = true
+  val tickStartTimes: List[(Double, Double)]  = List( (0.083, 0.084), (0.16, 0.17), (0.25, 0.25), (0.33, 0.34), (0.41, 0.42),
+    (0.5, 0.5), (0.58, 0.59), (0.66, 0.67), (0.75, 0.75), (0.83, 0.84), (0.91, 0.92) )
 
-  val eventNamesAndParameters       = List("player_error", "player_start", "player_play_completed", "completion",
-    "click", "player_play_seek", "click_pause", "click_pause_off", "click_player_fullscreen", "completionRate")
+  val eventNamesAndParameters                 = List( "player_error",
+                                                      "player_start",
+                                                      "player_play_completed",
+                                                      "completion",
+                                                      "click",
+                                                      "player_play_seek",
+                                                      "click_pause",
+                                                      "click_pause_off",
+                                                      "click_player_fullscreen",
+                                                      "completionRate" )
 
-  val completionRates: List[Int]    = List( 1, 25, 50, 75, 95 )
+  val completionRates: List[Int]               = List( 1, 25, 50, 75, 95 )
 
   val myRoute =
     path("api" / "player") {
@@ -175,18 +176,28 @@ trait CollectorService extends HttpService {
 
   def checkStartTime(startTime: Double): String = {
 
-    val checkResponse: String = if (tickStartTimes.contains(startTime) ||
+    var stIn0to1minuteRange = false
+
+    breakable {
+      for( (low, high) <- tickStartTimes ) {
+        if ((startTime >= low && startTime <= high)) {
+          stIn0to1minuteRange = true
+          break
+        }
+      }
+    }
+
+    val checkResponse: String = if (stIn0to1minuteRange||
       startTime % 1 == 0)
       startTime + " => OK"
     else {
 
       requestIsValid = false
 
-      startTime + " KO => is not an acceptable value. Ticks must be sent every 5 seconds during the first " +
+      " KO => " + startTime + " is not a valid value. Ticks must be sent every 5 seconds during the first " +
         "minute of video, then every minute after the first minute. The startTime value has " +
         "to be provided minutely."
     }
-
 
     checkResponse
   }
@@ -200,7 +211,6 @@ trait CollectorService extends HttpService {
       requestIsValid = false
       "KO => " + eventName + " is not a valid event name"
     }
-
 
     eventNameValidation
   }
