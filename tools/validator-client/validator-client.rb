@@ -54,14 +54,14 @@ rescue Faraday::ConnectionFailed => e
 end
 
 @headers = {}
-File.readlines(open(infile)).first.split("|").each do |c|
-# CSV.foreach(open(infile), col_sep: "|").first.each do |c|
+File.readlines(open(infile)).first.split(";").each do |c|
+# CSV.foreach(open(infile), col_sep: ";").first.each do |c|
   next if c.chomp.size == 0
   @headers[c.downcase.intern] = c
 end
 
 # @table = CSV.table(open(infile), headers: :first_row, col_sep: "\t", skip_blanks: true, skip_lines: /^#/)
-@table = CSV.table(open(infile), col_sep: "|")
+@table = CSV.table(open(infile), col_sep: ";")
 
 buf = []
 
