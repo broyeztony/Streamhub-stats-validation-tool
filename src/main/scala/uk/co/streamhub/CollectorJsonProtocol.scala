@@ -5,7 +5,9 @@ import spray.json.DefaultJsonProtocol
 
 case class UA(name: String, operatingSystem: String, device: String, category:String )
 
-case class ApiPlayerResponse( valid: Boolean,
+case class Response(status: Int)
+
+case class ApiPlayerResponse( response: Response,
                               publicId: String,
                               partnerId: String,
                               analyticsId: String,
@@ -16,7 +18,7 @@ case class ApiPlayerResponse( valid: Boolean,
                               sessionId: String,
                               randomSessionKey: String)
 
-case class ApiPlayerEventResponse(valid: Boolean,
+case class ApiPlayerEventResponse(response: Response,
                                   publicId: String,
                                   partnerId: String,
                                   analyticsId: String,
@@ -32,6 +34,7 @@ case class ApiPlayerEventResponse(valid: Boolean,
 
 object CollectorJsonProtocol extends DefaultJsonProtocol {
 
+  implicit val responseFormat               = jsonFormat1( Response )
   implicit val uaFormat                     = jsonFormat4( UA )
   implicit val apiPlayerResponseFormat      = jsonFormat10( ApiPlayerResponse )
   implicit val apiPlayerEventResponseFormat = jsonFormat12( ApiPlayerEventResponse )

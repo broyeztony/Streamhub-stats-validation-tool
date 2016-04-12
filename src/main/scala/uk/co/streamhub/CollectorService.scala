@@ -18,7 +18,7 @@ class CollectorServiceActor extends Actor with CollectorService {
 
 trait CollectorService extends HttpService {
 
-  var requestIsValid:Boolean                  = true
+  var requestIsValid:Int                      = 1
   val tickStartTimes: List[(Double, Double)]  = List( (0.083, 0.084), (0.16, 0.17), (0.25, 0.25), (0.33, 0.34), (0.41, 0.42),
     (0.5, 0.5), (0.58, 0.59), (0.66, 0.67), (0.75, 0.75), (0.83, 0.84), (0.91, 0.92) )
 
@@ -34,6 +34,8 @@ trait CollectorService extends HttpService {
                                                       "completionRate" )
 
   val completionRates: List[Int]               = List( 1, 25, 50, 75, 95 )
+
+
 
   val myRoute =
     path("api" / "player") {
@@ -57,12 +59,12 @@ trait CollectorService extends HttpService {
           complete {
 
             // First assume the request is valid
-            requestIsValid = true
+            requestIsValid = 1
 
             val checkedUrlParams = checkUrlParams(agent, publicId, partnerId,
               analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
 
-            new ApiPlayerResponse(requestIsValid, checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
+            new ApiPlayerResponse(new Response(requestIsValid), checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
               checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
               checkedUrlParams._8, checkedUrlParams._9)
           }
@@ -91,14 +93,14 @@ trait CollectorService extends HttpService {
             complete {
 
               // First assume the request is valid
-              requestIsValid = true
+              requestIsValid = 1
 
               val checkedUrlParams          = checkUrlParams(agent, publicId, partnerId, analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
               val eventNameValidation       = checkEventName(eventName)
               val completionRateValidation  = checkCompletionRate(eventName, completionRate)
 
 
-              new ApiPlayerEventResponse(requestIsValid, checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
+              new ApiPlayerEventResponse(new Response(requestIsValid), checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
                 checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
                 checkedUrlParams._8, checkedUrlParams._9, eventNameValidation, completionRateValidation)
 
@@ -134,7 +136,7 @@ trait CollectorService extends HttpService {
   def checkIfEmpty(fieldName: String, fieldValue: String): String = {
 
     val checkResponse = if (fieldValue.isEmpty){
-      requestIsValid = false
+      requestIsValid = 0
       "KO => can not be empty."
     }
     else
@@ -166,7 +168,7 @@ trait CollectorService extends HttpService {
       if (hasChannelId && parentPublicId.get.length > 0)
         "=> OK"
       else {
-        requestIsValid = false
+        requestIsValid = 0
         "KO => The parameter parentPublicId is either missing or has an empty value."
       }
     }
@@ -192,7 +194,7 @@ trait CollectorService extends HttpService {
       startTime + " => OK"
     else {
 
-      requestIsValid = false
+      requestIsValid = 0
 
       " KO => " + startTime + " is not a valid value. Ticks must be sent every 5 seconds during the first " +
         "minute of video, then every minute after the first minute. The startTime value has " +
@@ -208,7 +210,7 @@ trait CollectorService extends HttpService {
       eventName + " => OK"
     else {
 
-      requestIsValid = false
+      requestIsValid = 0
       "KO => " + eventName + " is not a valid event name"
     }
 
@@ -228,7 +230,7 @@ trait CollectorService extends HttpService {
             completionRate + " => OK"
           else {
 
-            requestIsValid = false
+            requestIsValid = 0
             "KO => Completion rate is either missing or invalid. Found " + completionRate +
               ", expected: one of " + completionRates toString
           }
@@ -236,7 +238,7 @@ trait CollectorService extends HttpService {
         }
         case None => {
 
-          requestIsValid = false
+          requestIsValid = 0
           completionRateValidation = "KO => a completionRate value needs to be provided " +
             "along with a completion event."
         }
