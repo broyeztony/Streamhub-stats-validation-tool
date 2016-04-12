@@ -31,6 +31,8 @@ case class ApiPlayerEventResponse(response: Response,
                                   event: String,
                                   completionRate: String)
 
+case class ApiValidationResponse(response: Response, userAgent: UA, errors: List[String])
+
 
 object CollectorJsonProtocol extends DefaultJsonProtocol {
 
@@ -38,6 +40,7 @@ object CollectorJsonProtocol extends DefaultJsonProtocol {
   implicit val uaFormat                     = jsonFormat4( UA )
   implicit val apiPlayerResponseFormat      = jsonFormat10( ApiPlayerResponse )
   implicit val apiPlayerEventResponseFormat = jsonFormat12( ApiPlayerEventResponse )
+  implicit val apiValidationResponseFormat  = jsonFormat3( ApiValidationResponse )
 
 }
 

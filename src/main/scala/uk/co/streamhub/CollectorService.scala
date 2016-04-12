@@ -35,8 +35,6 @@ trait CollectorService extends HttpService {
 
   val completionRates: List[Int]               = List( 1, 25, 50, 75, 95 )
 
-
-
   val myRoute =
     path("api" / "player") {
 
@@ -58,15 +56,12 @@ trait CollectorService extends HttpService {
 
           complete {
 
-            // First assume the request is valid
-            requestIsValid = 1
+            val ua: UA                = checkUserAGent( agent )
 
-            val checkedUrlParams = checkUrlParams(agent, publicId, partnerId,
-              analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
+            val errors: List[String]  = checkUrlParams(publicId, partnerId, analyticsId, playerId, isLive,
+              parentPublicId, startTime, sessionId, randomSessionKey)
 
-            new ApiPlayerResponse(new Response(requestIsValid), checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
-              checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
-              checkedUrlParams._8, checkedUrlParams._9)
+            new ApiValidationResponse(new Response( if(errors.length > 0) 0 else 1 ), ua, errors)
           }
       }
     } ~
@@ -92,24 +87,23 @@ trait CollectorService extends HttpService {
 
             complete {
 
-              // First assume the request is valid
-              requestIsValid = 1
+              val ua: UA                = checkUserAGent( agent )
 
-              val checkedUrlParams          = checkUrlParams(agent, publicId, partnerId, analyticsId, playerId, isLive, parentPublicId, startTime, sessionId, randomSessionKey)
-              val eventNameValidation       = checkEventName(eventName)
-              val completionRateValidation  = checkCompletionRate(eventName, completionRate)
+              val urlParamsErrors: List[String]  = checkUrlParams(publicId, partnerId, analyticsId, playerId, isLive,
+                parentPublicId, startTime, sessionId, randomSessionKey)
 
+              val eventNameError        = checkEventName(eventName)
+              val completionRateError   = checkCompletionRate(eventName, completionRate)
 
-              new ApiPlayerEventResponse(new Response(requestIsValid), checkedUrlParams._1, checkedUrlParams._2, checkedUrlParams._3,
-                checkedUrlParams._4, checkedUrlParams._5, checkedUrlParams._6, checkedUrlParams._7,
-                checkedUrlParams._8, checkedUrlParams._9, eventNameValidation, completionRateValidation)
+              val errors = urlParamsErrors ::: eventNameError ::: completionRateError
+
+              new ApiValidationResponse(new Response( if(errors.length > 0) 0 else 1 ), ua, errors)
 
             }
         }
       }
 
-  def checkUrlParams(agent: String,
-                     publicId: String,
+  def checkUrlParams(publicId: String,
                      partnerId: String,
                      analyticsId: String,
                      playerId: String,
@@ -117,32 +111,29 @@ trait CollectorService extends HttpService {
                      parentPublicId: Option[String],
                      startTime: Double,
                      sessionId: String,
-                     randomSessionKey: String): (String, String, String, String, String, String, UA, String, String) = {
+                     randomSessionKey: String): List[String] = {
 
-    val publicIdValidation            = checkIfEmpty("publicId", publicId)
-    val partnerIdValidation           = checkIfEmpty("partnerId", partnerId)
-    val analyticsIdValidation         = checkIfEmpty("analyticsId", analyticsId)
-    val playerIdValidation            = checkIfEmpty("playerId", playerId)
-    val isLiveValidation              = checkIfLive(isLive, parentPublicId)
-    val startTimeValidation           = checkStartTime(startTime)
-    val userAgentValidation           = checkUserAGent(agent)
-    val sessionIdValidation           = checkIfEmpty("sessionId", sessionId)
-    val randomSessionKeyValidation    = checkIfEmpty("randomSessionKey", randomSessionKey)
+    val publicIdError                 = checkIfEmpty("publicId", publicId)
+    val partnerIdError                = checkIfEmpty("partnerId", partnerId)
+    val analyticsIdError              = checkIfEmpty("analyticsId", analyticsId)
+    val playerIdError                 = checkIfEmpty("playerId", playerId)
+    val isLiveError                   = checkIfLive(isLive, parentPublicId)
+    val startTimeError                = checkStartTime(startTime)
+    val sessionIdError                = checkIfEmpty("sessionId", sessionId)
+    val randomSessionKeyError         = checkIfEmpty("randomSessionKey", randomSessionKey)
 
-    (publicIdValidation, partnerIdValidation, analyticsIdValidation, playerIdValidation,
-      isLiveValidation, startTimeValidation, userAgentValidation, sessionIdValidation, randomSessionKeyValidation)
+    publicIdError ::: partnerIdError ::: analyticsIdError ::: playerIdError ::: isLiveError ::: startTimeError :::
+      sessionIdError ::: randomSessionKeyError
   }
 
-  def checkIfEmpty(fieldName: String, fieldValue: String): String = {
+  def checkIfEmpty(fieldName: String, fieldValue: String): List[String] = {
 
-    val checkResponse = if (fieldValue.isEmpty){
-      requestIsValid = 0
-      "KO => can not be empty."
+    var error: List[String] = List()
+    if (fieldValue.isEmpty){
+      error = error ::: List( fieldName + " can not be empty." )
     }
-    else
-      fieldValue + " => OK"
 
-    checkResponse
+    error
   }
 
   def checkUserAGent(agent: String): UA = {
@@ -156,7 +147,7 @@ trait CollectorService extends HttpService {
     userAgent
   }
 
-  def checkIfLive(isLive: Boolean, parentPublicId: Option[String]): String = {
+  def checkIfLive(isLive: Boolean, parentPublicId: Option[String]): List[String] = {
 
     if (isLive)
     {
@@ -165,18 +156,15 @@ trait CollectorService extends HttpService {
         case None => false
       }
 
-      if (hasChannelId && parentPublicId.get.length > 0)
-        "=> OK"
-      else {
-        requestIsValid = 0
-        "KO => The parameter parentPublicId is either missing or has an empty value."
-      }
+      if (hasChannelId && parentPublicId.get.length > 0) List()
+      else
+        List( "The parameter parentPublicId is either missing or has an empty value." )
     }
     else
-     isLive +  " => OK"
+      List()
   }
 
-  def checkStartTime(startTime: Double): String = {
+  def checkStartTime(startTime: Double): List[String] = {
 
     var stIn0to1minuteRange = false
 
@@ -189,37 +177,29 @@ trait CollectorService extends HttpService {
       }
     }
 
-    val checkResponse: String = if (stIn0to1minuteRange||
-      startTime % 1 == 0)
-      startTime + " => OK"
+    val errors: List[String] = if (stIn0to1minuteRange || startTime % 1 == 0) List()
     else {
-
-      requestIsValid = 0
-
-      " KO => " + startTime + " is not a valid value. Ticks must be sent every 5 seconds during the first " +
+      List( startTime + " is not a valid value. Ticks must be sent every 5 seconds during the first " +
         "minute of video, then every minute after the first minute. The startTime value has " +
-        "to be provided minutely."
+        "to be provided minutely." )
     }
 
-    checkResponse
+    errors
   }
 
-  def checkEventName(eventName: String): String = {
+  def checkEventName(eventName: String): List[String] = {
 
-    val eventNameValidation = if( eventNamesAndParameters.contains( eventName ) )
-      eventName + " => OK"
-    else {
+    val error: List[String] = if( eventNamesAndParameters.contains( eventName ) )
+      List()
+    else
+      List( eventName + " is not a valid event name" )
 
-      requestIsValid = 0
-      "KO => " + eventName + " is not a valid event name"
-    }
-
-    eventNameValidation
+    error
   }
 
-  def checkCompletionRate(eventName: String, completionRate: Option[Int]): String = {
+  def checkCompletionRate(eventName: String, completionRate: Option[Int]): List[String] = {
 
-    var completionRateValidation = "N/A"
+    var completionRateValidation:List[String]  = List()
 
     if( eventName == "completion" ){
 
@@ -227,20 +207,16 @@ trait CollectorService extends HttpService {
         case Some(completionRate) => {
 
           completionRateValidation = if( completionRates.contains( completionRate ) )
-            completionRate + " => OK"
+            List()
           else {
-
-            requestIsValid = 0
-            "KO => Completion rate is either missing or invalid. Found " + completionRate +
-              ", expected: one of " + completionRates toString
+            List("Completion rate is either missing or invalid. Found " + completionRate +
+              ", expected: one of " + completionRates toString )
           }
-
         }
         case None => {
 
-          requestIsValid = 0
-          completionRateValidation = "KO => a completionRate value needs to be provided " +
-            "along with a completion event."
+          completionRateValidation = List( "a completionRate value needs to be provided " +
+            "along with a completion event." )
         }
       }
     }
