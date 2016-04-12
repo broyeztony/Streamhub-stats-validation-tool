@@ -18,7 +18,6 @@ class CollectorServiceActor extends Actor with CollectorService {
 
 trait CollectorService extends HttpService {
 
-  var requestIsValid:Int                      = 1
   val tickStartTimes: List[(Double, Double)]  = List( (0.083, 0.084), (0.16, 0.17), (0.25, 0.25), (0.33, 0.34), (0.41, 0.42),
     (0.5, 0.5), (0.58, 0.59), (0.66, 0.67), (0.75, 0.75), (0.83, 0.84), (0.91, 0.92) )
 
@@ -210,7 +209,7 @@ trait CollectorService extends HttpService {
             List()
           else {
             List("Completion rate is either missing or invalid. Found " + completionRate +
-              ", expected: one of " + completionRates toString )
+              ", expected: one of " + completionRates )
           }
         }
         case None => {
@@ -223,9 +222,6 @@ trait CollectorService extends HttpService {
 
     completionRateValidation
   }
-
-
-
 }
 
 
