@@ -68,11 +68,12 @@ buf = []
 @table.each_with_index do |row, index|
   expected = ""
   params = nil
+  id = index + 1
 
   begin
     res = conn.get do |req|
       req.url api
-      expected = row[:_expected] == "OK"
+      expected = row[:_expected]
 
       @headers.each do |k,v|
         next unless row[k]
@@ -84,21 +85,25 @@ buf = []
       params = req.params
     end
   rescue Faraday::ConnectionFailed
-    buf << { "error" => "Failed to connect to #{url}" }
+    buf << { "errors" => [ "Failed to connect to #{url}" ] }
     break
   end
 
   if res.status == 200
     j = JSON.load(res.body)
-    j = { "id" => index }.merge(j)
+    j = { "id" => id }.merge(j)
     # j["params"] = params
     j["_expected"] = expected
-    j["result"] = (expected == j["valid"] && j["error"].nil?) ? "OK" : "NG"
+    j["result"] = (expected && j["errors"] && j["errors"].size == 0) ? "OK" : "NG"
     buf << j
+  elsif res.status == 404
+    buf << { "id" => id, "errors" => [ res.body ], "params" => params, "_expected" => expected, "result" => "NG" }
   else
     # Internal Server Error or something similar
-    buf << { "error" => res.body, "id" => index, "params" => params, "_expected" => expected }
+    buf << { "error" => res.body, "id" => id, "params" => params, "_expected" => expected }
   end
+
+  buf.last.merge!({ "status" => res.status })
 end
 
 output = case
