@@ -49,7 +49,7 @@ begin
     b.adapter Faraday.default_adapter
   end
 rescue Faraday::ConnectionFailed => e
-  puts "Failed to connect: #{Url}"
+  puts "Failed to connect to #{Url}"
   exit 1
 end
 
@@ -102,8 +102,6 @@ buf = []
     # Internal Server Error or something similar
     buf << { "error" => res.body, "id" => id, "params" => params, "_expected" => expected }
   end
-
-  buf.last.merge!({ "status" => res.status })
 end
 
 output = case
