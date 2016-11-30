@@ -35,7 +35,7 @@ trait CollectorService extends HttpService {
   val completionRates: List[Int]               = List( 1, 25, 50, 75, 95 )
 
   val myRoute =
-    path("api" / "player") {
+    path("api" / "player" / ) {
 
       parameters(
         'publicId.as[String],
@@ -64,7 +64,7 @@ trait CollectorService extends HttpService {
           }
       }
     } ~
-      path("api" / "playerevent") {
+      path("api" / "playerevent" / ) {
 
         parameters(
           'publicId.as[String],
